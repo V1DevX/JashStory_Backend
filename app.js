@@ -23,10 +23,10 @@ app.use(bodyParser.urlencoded({ limit: "500mb", extended: true }));
 app.use(morgan("dev"));
 
 // route section
-app.use("/api/v1/auth", authRoute);
-app.use("/api/v1/category", categoryRoute);
-app.use("/api/v1/posts", postRoute);
-// app.use("/api/v1/file", fileRoute);
+app.use("/api/auth", authRoute);
+app.use("/api/category", categoryRoute);
+app.use("/api/posts", postRoute);
+// app.use("/api/file", fileRoute);
 
 app.get("/", (req, res) => {
   res
