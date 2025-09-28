@@ -1,14 +1,16 @@
 const express = require("express");
+const cookieParser = require('cookie-parser');
 const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
 const morgan = require("morgan");
 const cors = require("cors");
 dotenv.config();
-const connectMongodb = require("./init/mongodb");
+const connectMongodb = require("./config/mongodb")
 // const { authRoute, categoryRoute, fileRoute, postRoute } = require("./routes");
-const { authRoute, categoryRoute, postRoute } = require("./routes");
+const { authRoute, categoryRoute, postRoute, fileRoute } = require("./routes");
 const { errorHandler } = require("./middlewares");
 const notfound = require("./controllers/notfound");
+const { nodeEnv } = require("./config/kyes");
 
 // init app
 const app = express();
@@ -17,16 +19,26 @@ const app = express();
 connectMongodb();
 
 // third-party middleware
-app.use(cors({ origin: "*" }));
+app.use(cors({
+  origin: nodeEnv ? 'https://jashstory.com' : 'http://localhost:5173',
+  credentials: true,
+}));
+app.use(cookieParser());
 app.use(express.json({ limit: "500mb" }));
 app.use(bodyParser.urlencoded({ limit: "500mb", extended: true }));
-app.use(morgan("dev"));
+/// TODO: when it's PROD save data in DB or in LogStream file
+app.use(morgan("dev", {
+  skip: function (req, res) {
+    return res.statusCode === 304;
+  }
+}));
 
 // route section
 app.use("/api/auth", authRoute);
 app.use("/api/category", categoryRoute);
 app.use("/api/posts", postRoute);
-// app.use("/api/file", fileRoute);
+
+app.use("/api/media", fileRoute);
 
 app.get("/", (req, res) => {
   res

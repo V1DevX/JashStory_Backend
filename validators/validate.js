@@ -11,7 +11,7 @@ const validate = (req, res, next) => {
       mappedErrors[error.path] = error.msg;
     });
 
-    res.status(400).json(mappedErrors);
+    res.status(401).json(mappedErrors);
   }
 };
 

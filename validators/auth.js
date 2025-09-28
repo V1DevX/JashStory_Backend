@@ -2,23 +2,19 @@ const { check } = require("express-validator");
 const validateEmail = require("./validateEmail");
 const mongoose = require("mongoose");
 
-const signupValidator = [
+const registerValidator = [
   check("name").notEmpty().withMessage("Name is required"),
 
   check("email")
-    .isEmail()
-    .withMessage("Invalid email")
-    .notEmpty()
-    .withMessage("Email is required"),
+    .isEmail()  .withMessage("Invalid email")
+    .notEmpty() .withMessage("Email is required"),
 
   check("password")
-    .isLength({ min: 6 })
-    .withMessage("Password should be 6 char long")
-    .notEmpty()
-    .withMessage("Password is required"),
+    .isLength({ min: 6 }) .withMessage("Password should be 6 char long")
+    .notEmpty()           .withMessage("Password is required"),
 ];
 
-const signinValidator = [
+const loginValidator = [
   check("email")
     .isEmail()
     .withMessage("Invalid email")
@@ -86,8 +82,8 @@ const updateProfileValidator = [
 ];
 
 module.exports = {
-  signupValidator,
-  signinValidator,
+  registerValidator,
+  loginValidator,
   emailValidator,
   verifyUserValidator,
   recoverPasswordValidator,

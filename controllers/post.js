@@ -3,8 +3,9 @@ const { Post } = require("../models");
 const addPost = async (req, res, next) => {
   try {
     const { ru, en, kg, previewImage } = req.body;
-    const { _id: userId } = req.user;
-
+    const { _id: userId } = res.locals.user;
+    console.log(res.locals.user);
+    
     const newPost = new Post({
       ru,en,kg,
       previewImage,

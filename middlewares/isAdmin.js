@@ -1,14 +1,9 @@
-const isAdmin = (req, res, next) => {
-  try {
-    if (req.user && (req.user.role === 1 || req.user.role === 2)) {
-      next();
-    } else {
-      res.code = 401;
-      throw new Error("Permission denied");
-    }
-  } catch (error) {
-    next(error);
-  }
+const isAdmin = (...allowed) => (req, res, next) => {
+	if(!req.user) return res.status(401).json({ status: false, message: 'Unauthorized' })
+	if(!allowed.includes(res.user.role)) {
+		return res.status(403).json({ status: false, message: 'Forbidden' })
+	}
+	next()
 };
 
 module.exports = isAdmin;
