@@ -15,7 +15,10 @@ const postSchema = new mongoose.Schema(
     ru: { type: langSchema, required: true },
     kg: { type: langSchema, required: true },
 
-    previewImage: { type: String },
+    previewImage: { 
+      public_id: {type: String, required: true},
+      url: {type: String, required: true},
+    },
 
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
   },
