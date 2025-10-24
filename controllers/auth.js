@@ -328,7 +328,7 @@ const { User } = require("../models");
 
 
 const register = async (req, res, next) => {
-	const { name, email, password, role=3 } = req.body;
+	const { name, email, password, role } = req.body;
 
 	// Email already exist
 	const isEmailExist = await User.findOne({ email });
@@ -336,7 +336,7 @@ const register = async (req, res, next) => {
 
 	// Only Super Admin can create new Admin
 	if (role === 2) {
-		return
+		// check sender's role, if role==1 apply, else don't (return 401 error)
 	}
 	if(role) return res.status(401).json({ status:false, message:'Invalid data' });
 
@@ -380,13 +380,13 @@ const login = async (req, res, next) => {
 }
 
 const refresh = async (req, res, next) => {
-	const refreshToken = req.cookies?.jid;
-	if (!refreshToken) return res.status(401).json({ status: false, message: 'No refresh cookie'});
-	
-	const refreshData = await refreshTokenFunc(refreshToken)
-	if (!refreshData) return res.status(401).json({ status:false, message: 'Invalid refresh' })
-	
 	try {
+		const refreshToken = req.cookies?.jid;
+		if (!refreshToken) return res.status(401).json({ status: false, message: 'No refresh cookie'});
+		
+		const refreshData = await refreshTokenFunc(refreshToken)
+		if (!refreshData) return res.status(401).json({ status:false, message: 'Invalid refresh' })
+	
 		const user = await User.findById(refreshData?.payload?.sub)
 		const accessToken = generateAccessToken(user)
 		await issueRefresh(res, user, refreshData?.record?.jti)
