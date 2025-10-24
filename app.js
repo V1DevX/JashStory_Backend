@@ -10,7 +10,7 @@ const connectMongodb = require("./config/mongodb")
 const { authRoute, categoryRoute, postRoute, fileRoute, testRoute } = require("./routes");
 const { errorHandler } = require("./middlewares");
 const notfound = require("./controllers/notfound");
-const { nodeEnv } = require("./config/kyes");
+const { isProd } = require("./config/kyes");
 
 // init app
 const app = express();
@@ -20,7 +20,7 @@ connectMongodb();
 
 // third-party middleware
 app.use(cors({
-  origin: nodeEnv ? 'https://jashstory.com' : 'http://localhost:5173',
+  origin: isProd ? 'https://jashstory.com' : 'http://localhost:5173',
   credentials: true,
 }));
 app.use(cookieParser());

@@ -6,7 +6,7 @@ const {
 	markUsed,
 	revokeFamily,
 } = require("./refreshTokenService");
-const { nodeEnv, jwtAccessSecret, jwtRefreshSecret } = require("../../config/kyes");
+const { isProd, jwtAccessSecret, jwtRefreshSecret } = require("../../config/kyes");
 
 function generateAccessToken(user) {
 	return jwt.sign(
@@ -38,8 +38,8 @@ const issueRefresh = async (res, user, prevRefreshToken = null) => {
 		/// idk why, but if turn if on it'll crush.
 		
 		// httpOnly: true,
-		// secure: nodeEnv, // https
-		// sameSite: nodeEnv ? 'Lax' : 'none',
+		secure: isProd, // https
+		sameSite: isProd ? 'Lax' : 'none',
 		// path: '/auth',       // ограничим область
 		maxAge: 30*24*3600*1000
 	});

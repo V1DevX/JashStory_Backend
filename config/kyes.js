@@ -1,6 +1,6 @@
 const {
   PORT,
-  NODE_ENV,
+  IS_PROD,
   CONNECTION_URL,
   JWT_ACCESS_SECRET,
   JWT_REFRESH_SECRET,
@@ -17,7 +17,7 @@ const {
 
 module.exports = {
   port: PORT, 
-  nodeEnv: NODE_ENV === 'PROD', // Type: Boolean
+  isProd: IS_PROD,
   connectionUrl: CONNECTION_URL,
   jwtAccessSecret: JWT_ACCESS_SECRET,
   jwtRefreshSecret: JWT_REFRESH_SECRET,
