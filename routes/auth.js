@@ -74,14 +74,14 @@ const validate = require("../validators/validate");
 const isAuth = require("../middlewares/isAuth");
 const { authController } = require("../controllers");
 
-router.post('/register', registerValidator, validate, authController.register)
+router.post('/register', isAuth(), registerValidator, validate, authController.register)
 
-router.post("/login", loginValidator, validate, authController.login);
+router.post("/login", isAuth(), loginValidator, validate, authController.login);
 
-router.post("/refresh", authController.refresh);
+router.post("/refresh", isAuth(), authController.refresh);
 
-router.post("/logout", isAuth, authController.logout);
+router.post("/logout", isAuth(), authController.logout);
 
-router.get("/current-user", isAuth, authController.currentUser);
+router.get("/current-user", isAuth(), authController.currentUser);
 
 module.exports = router;

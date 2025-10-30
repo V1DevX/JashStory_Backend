@@ -400,8 +400,14 @@ const refresh = async (req, res, next) => {
 }
 
 const currentUser = async (req, res) => {
-	const user = await User.findById(res.locals.user._id).select('name email role')
-	res.json({ status:true, data: user })
+	const error = res.locals.error;
+	if(error) return res.status(401).json({status:false, message: error})
+	
+	const user =  res.locals.user;
+	if(!user) return res.status(500).json({ status:false, message: 'Undefined user data' })
+	
+	const userData = await User.findById(user._id).select('name email role')
+	res.status(200).json({ status:true, data: userData })
 }
 
 const logout = async (req, res) => {

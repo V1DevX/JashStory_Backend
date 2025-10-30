@@ -1,5 +1,4 @@
-const Test = require('../models');
-const Post = require('../models');
+const { Test, Post } = require('../models');
 const mongoose = require('mongoose');
 
 const createTest = async (req, res, next) => {
@@ -33,15 +32,33 @@ const createTest = async (req, res, next) => {
 
 const getTests = async (req, res, next) => {
   try {
-    // Only for admins
-    const { id, lang = "en" } = req.params;
-    const tests = await Test.find().lean();
-    if (!tests) return res.status(404).json({ status: false, message: "Test not found" });
+    const { lang = "en" } = req.params;
+
+    // Выбираем только требуемый языковой блок и _id
+    const selectionObject = {
+      _id: 1,
+      [lang]: 1,
+      createdBy: 1,
+      updatedBy: 1
+    };
+
+    const tests = await Test.find().select(selectionObject).lean();
+
+    // Поднимаем языковой блок на корневой уровень
+    const transformed = tests.map(test => {
+      const langData = test[lang] || {};
+      return {
+        _id: test._id,
+        ...langData,
+        createdBy: test.createdBy,
+        updatedBy: test.updatedBy
+      };
+    });
 
     res.status(200).json({
       status: true,
       message: "Tests fetched successfully",
-      data: tests
+      data: transformed
     });
   } catch (error) {
     next(error);
@@ -50,14 +67,27 @@ const getTests = async (req, res, next) => {
 
 const getTest = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const test = await Test.findById(id).lean();
+    const { id, lang = "en" } = req.params;
+
+    const test = await Test.findById(id)
+      .select(`${lang} createdBy updatedBy`)
+      .populate("createdBy", "name email")
+      .populate("updatedBy", "name email")
+      .lean();
+
     if (!test) return res.status(404).json({ status: false, message: "Test not found" });
+
+    const langData = test[lang] || {};
 
     res.status(200).json({
       status: true,
       message: "Test fetched successfully",
-      data: test
+      data: {
+        _id: test._id,
+        ...langData,
+        createdBy: test.createdBy,
+        updatedBy: test.updatedBy
+      }
     });
   } catch (error) {
     next(error);

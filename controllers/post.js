@@ -80,26 +80,20 @@ const getPosts = async (req, res, next) => {
 	try {
 		const { lang = "en" } = req.params;
 		
-		// const isAdmin = false;
-		// const h = req.headers.authorization || '';	// Null - todo:fix
-		// const accessToken = h.startsWith('Bearer ') ? h.slice(7) : null;
-		
-		// if(accessToken) {
-		// 	const payload = jwt.verify(accessToken, jwtAccessSecret)
-		// 	if(payload && payload.role < 2) { isAdmin = true }
-		// }
+		// Determine if the user is admin
+		const isAdmin = res.locals.user?.role !== 3;
 
-		// Определяем, какие поля исключить, используя синтаксис Mongoose
+		/// Определяем, какие поля исключить, используя синтаксис Mongoose
 		let selectionObject = {
 			'_id': 1,
-			'previewPhoto': 1,
-			[`${lang}.title`]: 1, // Динамически включаем вложенные поля нужного языка
-			[`${lang}.desc`]: 1,  //
-			// ...(isAdmin && { createdBy: 1, updatedBy: 1 })
+			'previewImage': 1,
+			[`${lang}.title`]: 1, /// Динамически включаем вложенные поля нужного языка
+			[`${lang}.desc`]: 1,  ///
+			...(isAdmin && { createdBy: 1, updatedBy: 1 })
 		};
 
 		let query = Post.find().select(selectionObject)
-		// if(isAdmin) query = query.populate("updatedBy", "name email")
+		if(isAdmin) query = query.populate("updatedBy", "name email")
 
 		const posts = await query.lean()
 
@@ -109,10 +103,10 @@ const getPosts = async (req, res, next) => {
 			
 			return {
 				_id: post._id,
-				previewPhoto: post.previewPhoto,
+				previewImage: post.previewImage,
 				title: langData.title,
 				desc: langData.desc,
-				// ...(isAdmin && { createdBy: post.createdBy, updatedBy: post.updatedBy }),
+				...(isAdmin && { createdBy: post.createdBy, updatedBy: post.updatedBy }),
 			};
 		});
 

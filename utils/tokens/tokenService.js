@@ -37,10 +37,10 @@ const issueRefresh = async (res, user, prevRefreshToken = null) => {
 		/// TODO: Fix this bug
 		/// idk why, but if turn if on it'll crush.
 		
-		// httpOnly: true,
+		httpOnly: true,
 		secure: isProd, // https
-		sameSite: isProd ? 'Lax' : 'none',
-		// path: '/auth',       // ограничим область
+		sameSite: (isProd ? 'Lax' : 'none'),
+		path: '/auth',       // ограничим область
 		maxAge: 30*24*3600*1000
 	});
 	

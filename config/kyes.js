@@ -17,7 +17,7 @@ const {
 
 module.exports = {
   port: PORT, 
-  isProd: IS_PROD,
+  isProd: IS_PROD==="true",
   connectionUrl: CONNECTION_URL,
   jwtAccessSecret: JWT_ACCESS_SECRET,
   jwtRefreshSecret: JWT_REFRESH_SECRET,

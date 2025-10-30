@@ -10,24 +10,25 @@ const {
 const validate = require("../validators/validate");
 
 router.post("/",
-  isAuth,
+  isAuth(2),
   validate,
   postController.addPost);
 
 router.put( "/:id",
-  isAuth,
+  isAuth(2),
   // updatePostValidator,
   idValidator,
   validate,
   postController.updatePost);
 
 router.delete("/:id", 
-  isAuth, 
+  isAuth(2), 
   idValidator, 
   validate, 
   postController.deletePost);
 
 router.get("/:lang", 
+  isAuth(),
   postController.getPosts);
 
 router.get("/:id/:lang", 

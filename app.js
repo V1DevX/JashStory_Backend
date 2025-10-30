@@ -20,7 +20,7 @@ connectMongodb();
 
 // third-party middleware
 app.use(cors({
-  origin: isProd ? 'https://jashstory.com' : 'http://localhost:5173',
+  origin: (isProd ? 'https://jashstory.com' : 'http://localhost:5173'),
   credentials: true,
 }));
 app.use(cookieParser());
