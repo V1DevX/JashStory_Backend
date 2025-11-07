@@ -18,11 +18,6 @@ const questionLangSchema = new mongoose.Schema(
 
 const questionSchema = new mongoose.Schema(
   {
-    type: {
-      type: String,
-      enum: ["single", "multiple", "open"],
-      required: true,
-    },
     en: { type: questionLangSchema, required: true },
     ru: { type: questionLangSchema, required: true },
     kg: { type: questionLangSchema, required: true },
@@ -34,6 +29,7 @@ const testSchema = new mongoose.Schema(
   {
     _id: { type: mongoose.Schema.Types.ObjectId, ref: "post" }, // общий ID с Post
     questions: { type: [questionSchema], required: true },
+    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "user", default: null },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
   },
   { timestamps: true }

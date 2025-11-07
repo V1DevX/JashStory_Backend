@@ -13,8 +13,7 @@ const postSchema = new mongoose.Schema(
 	{
 		rating: { type: Number, default: 0 },
 		reviewsCount: { type: Number, default: 0 },
-
-
+		
 		en: { type: langSchema, required: true },
 		ru: { type: langSchema, required: true },
 		kg: { type: langSchema, required: true },
@@ -24,8 +23,11 @@ const postSchema = new mongoose.Schema(
 			url: {type: String, required: true},
 		},
 
-		status: { type: String, enum: ["draft", "published"], default: "draft" },
-		updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
+		// States
+		hasTest: { type: Boolean, default: false },
+		status: { type: String, enum: ["hidden", "published"], default: "hidden" },
+		updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "user", default: null },
+		createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
 	},
 	{ timestamps: true }
 );

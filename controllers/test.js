@@ -6,24 +6,26 @@ const createTest = async (req, res, next) => {
     const { id } = req.params;
     const { questions } = req.body;
     const { _id: userId } = res.locals.user;
-
+    console.log(questions);
+    
     const post = await Post.findById(id);
     if (!post) return res.status(404).json({ status: false, message: "Post not found" });
-
-    const existing = await Test.findById(id);
-    if (existing) return res.status(400).json({ status: false, message: "Test already exists for this post" });
+    if (post.hasTest) return res.status(400).json({ status: false, message: "Post already has a test" });
 
     const test = new Test({
       _id: new mongoose.Types.ObjectId(id), // общий id с постом
-      questions,
-      createdBy: userId
+      questions: questions,
+      createdBy: userId,
     });
     await test.save();
+
+    post.hasTest = true;
+    await post.save();
 
     res.status(201).json({
       status: true,
       message: "Test created successfully",
-      data: test
+      data: test,
     });
   } catch (error) {
     next(error);
@@ -34,24 +36,25 @@ const getTests = async (req, res, next) => {
   try {
     const { lang = "en" } = req.params;
 
-    // Выбираем только требуемый языковой блок и _id
+    // Determine if the user is admin
+    const isAdmin = res.locals.user?.role !== 3;
+
+    // Select fields based on the user's role
     const selectionObject = {
       _id: 1,
       [lang]: 1,
-      createdBy: 1,
-      updatedBy: 1
+      ...(isAdmin && { createdBy: 1, updatedBy: 1 })
     };
 
     const tests = await Test.find().select(selectionObject).lean();
 
-    // Поднимаем языковой блок на корневой уровень
+    // Transform the tests to bring the language block to the root level
     const transformed = tests.map(test => {
       const langData = test[lang] || {};
       return {
         _id: test._id,
         ...langData,
-        createdBy: test.createdBy,
-        updatedBy: test.updatedBy
+        ...(isAdmin && { createdBy: test.createdBy, updatedBy: test.updatedBy })
       };
     });
 
@@ -66,27 +69,86 @@ const getTests = async (req, res, next) => {
 };
 
 const getTest = async (req, res, next) => {
+  console.log('hi');
   try {
-    const { id, lang = "en" } = req.params;
+    const { id } = req.params;
+    const { lang='en', isEditMode=false } = req.query;
+    const isAdmin = res.locals.user?.role !== 3;
 
+    // isEditMode indicates if the request is for editing purposes
+    if(isEditMode) {
+      if(!res.locals.user) {
+        return res.status(401).json({ status: false, message: 'Unauthorized' });
+      }
+
+      // If isEditMode is true, ensure the user is not an admin
+      if (isEditMode && !isAdmin) {
+        res.status(403).json({ status: false, message: 'Forbidden' });
+      }
+    }
+    
+    
+    
     const test = await Test.findById(id)
-      .select(`${lang} createdBy updatedBy`)
-      .populate("createdBy", "name email")
-      .populate("updatedBy", "name email")
-      .lean();
-
+    
     if (!test) return res.status(404).json({ status: false, message: "Test not found" });
-
-    const langData = test[lang] || {};
-
+    
+    // Secretly select fields based on role and isEditMode
+    if (isAdmin && isEditMode) {
+      test.select('createdBy updatedBy');
+      test.populate("createdBy", "name email")
+      test.populate("updatedBy", "name email")
+    } else {
+      test.select(`${lang}`);
+    }
+    test.lean();
+    
+    // Data to return
+    const data = isAdmin && isEditMode ? test : test[lang];
+    if (!isAdmin) {
+      // Delete correct answers for non-admin users
+      data.questions.forEach(question => {
+        question.options.forEach(option => {
+          delete option.isCorrect;
+        });
+      });
+    }
     res.status(200).json({
       status: true,
       message: "Test fetched successfully",
       data: {
         _id: test._id,
-        ...langData,
-        createdBy: test.createdBy,
-        updatedBy: test.updatedBy
+        ...data,
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getResults = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { answers } = req.body; // answers should be an array of selected option indices
+
+    const test = await Test.findById(id);
+    if (!test) return res.status(404).json({ status: false, message: "Test not found" });
+
+    let correctCount = 0;
+    test.questions.forEach((question, index) => {
+      const selectedOptionIndex = answers[index];
+      if (question.options[selectedOptionIndex]?.isCorrect) {
+        correctCount++;
+      }
+    });
+
+    res.status(200).json({
+      status: true,
+      message: "Results calculated successfully",
+      data: {
+        totalQuestions: test.questions.length,
+        correctAnswers: correctCount,
+        score: (correctCount / test.questions.length) * 100
       }
     });
   } catch (error) {

@@ -9,33 +9,31 @@ const {
 } = require("../validators/post");
 const validate = require("../validators/validate");
 
-router.post("/",
-  isAuth,
+router.post("/:id",
+  isAuth(2),
   validate,
   testController.createTest);
 
 router.put( "/:id",
-  isAuth,
+  isAuth(2),
   // updatePostValidator,
-  idValidator,
   validate,
   testController.updateTest);
 
 router.delete("/:id", 
-  isAuth, 
-  idValidator, 
+  isAuth(2), 
   validate, 
   testController.deleteTest);
 
-router.get("/:lang", 
-  isAuth, 
-  idValidator, 
-  validate,
-  testController.getTests);
-
-router.get("/:id/:lang", 
-  idValidator, 
+router.get("/:id",
+  isAuth(),
+  (req, res, next)=>{console.log('2 middleware test'); next();},
   validate,
   testController.getTest);
+    
+router.get("/list/:lang", 
+  isAuth(), 
+  validate,
+  testController.getTests);
 
 module.exports = router;

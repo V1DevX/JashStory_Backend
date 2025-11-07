@@ -13,7 +13,7 @@ const isAuth = (allowed=null) => (req, res, next) => {
 		if (!payload) { res.locals.error = "Invalid token"; return next()}
 		
 		// Check role if allowed is specified
-		if(allowed && allowed !== payload.role) {
+		if(allowed && allowed < payload.role) {
 			// For admins
 			if(allowed !== 3) return res.status(403).json({ status: false, message: 'Forbidden' })
 			// For user accounts

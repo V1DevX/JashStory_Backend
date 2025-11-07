@@ -8,7 +8,7 @@ const addPost = async (req, res, next) => {
 		const newPost = new Post({
 			ru,en,kg,
 			previewImage,
-			updatedBy: userId,
+			createdBy: userId,
 		});
 
 		await newPost.save();
@@ -27,27 +27,37 @@ const addPost = async (req, res, next) => {
 const updatePost = async (req, res, next) => {
 	try {
 		const { id } = req.params;
-		const { ru, en, kg, previewImage } = req.body;
+		// const { ru, en, kg, previewImage, status } = req.body;
+		const changes = req.body;
 		const userId = req.user._id
-
+		
 		const post = await Post.findById(id);
 		if (!post) {
 			return res.status(404).json({ status: false, message: "Post not found" });
 		}
-
-		// Обновляем только то, что пришло
-		if (ru) post.ru = ru;
-		if (en) post.en = en;
-		if (kg) post.kg = kg;
-		if (previewImage) post.previewImage = previewImage;
-		if (userId) post.updatedBy = userId;
+		
+		// User info for updatedBy
+		if(userId) {
+			post.updatedBy = userId;
+			// Обновляем только то, что пришло
+			for (const key in changes) {
+				if (post[key] !== undefined) {
+					post[key] = changes[key];
+				}
+			}
+			// if (ru) post.ru = ru;
+			// if (en) post.en = en;
+			// if (kg) post.kg = kg;
+			// if (previewImage) post.previewImage = previewImage;
+			// if (status) post.status = status;
+		} 
+		else res.status(401).json({ status: false, message: "Unknown user" });
 
 		await post.save();
 
 		return res.status(200).json({
 			status: true,
 			message: "Post updated successfully",
-			data: post,
 		});
 	} catch (error) {
 		next(error);
@@ -89,11 +99,13 @@ const getPosts = async (req, res, next) => {
 			'previewImage': 1,
 			[`${lang}.title`]: 1, /// Динамически включаем вложенные поля нужного языка
 			[`${lang}.desc`]: 1,  ///
-			...(isAdmin && { createdBy: 1, updatedBy: 1 })
+			...(isAdmin && { status: 1, hasTest: 1, updatedBy: 1, createdBy: 1, updatedAt: 1, createdAt: 1 })
 		};
 
 		let query = Post.find().select(selectionObject)
-		if(isAdmin) query = query.populate("updatedBy", "name email")
+		if(isAdmin) query = query
+			.populate("updatedBy", "name")
+			.populate("createdBy", "name")
 
 		const posts = await query.lean()
 
@@ -106,7 +118,14 @@ const getPosts = async (req, res, next) => {
 				previewImage: post.previewImage,
 				title: langData.title,
 				desc: langData.desc,
-				...(isAdmin && { createdBy: post.createdBy, updatedBy: post.updatedBy }),
+				...(isAdmin && {
+					status: post.status,
+					hasTest: post.hasTest,
+					updatedBy: post.updatedBy,
+					createdBy: post.createdBy,
+					updatedAt: post.updatedAt,
+					createdAt: post.createdAt,
+				}),
 			};
 		});
 

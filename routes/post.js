@@ -14,10 +14,9 @@ router.post("/",
   validate,
   postController.addPost);
 
-router.put( "/:id",
+router.patch( "/:id",
   isAuth(2),
   // updatePostValidator,
-  idValidator,
   validate,
   postController.updatePost);
 
