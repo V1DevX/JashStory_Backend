@@ -78,10 +78,10 @@ router.post('/register', isAuth(), registerValidator, validate, authController.r
 
 router.post("/login", isAuth(), loginValidator, validate, authController.login);
 
-router.post("/refresh", isAuth(), authController.refresh);
+router.post("/refresh", isAuth(3), authController.refresh);
 
-router.post("/logout", isAuth(), authController.logout);
+router.post("/logout", isAuth(3), authController.logout);
 
-router.get("/current-user", isAuth(), authController.currentUser);
+router.get("/current-user", isAuth(3), authController.currentUser);
 
 module.exports = router;

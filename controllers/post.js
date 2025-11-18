@@ -1,4 +1,4 @@
-const { Post } = require("../models");
+const { Post, User } = require("../models");
 
 const addPost = async (req, res, next) => {
 	try {
@@ -88,10 +88,10 @@ const deletePost = async (req, res, next) => {
 // ✅ Get all posts
 const getPosts = async (req, res, next) => {
 	try {
-		const { lang = "en" } = req.params;
-		
+		const { lang = "en", details = false } = req.query;
+
 		// Determine if the user is admin
-		const isAdmin = res.locals.user?.role !== 3;
+		const isAdmin = details && res.locals.user?.role !== 3;
 
 		/// Определяем, какие поля исключить, используя синтаксис Mongoose
 		let selectionObject = {
@@ -99,15 +99,17 @@ const getPosts = async (req, res, next) => {
 			'previewImage': 1,
 			[`${lang}.title`]: 1, /// Динамически включаем вложенные поля нужного языка
 			[`${lang}.desc`]: 1,  ///
-			...(isAdmin && { status: 1, hasTest: 1, updatedBy: 1, createdBy: 1, updatedAt: 1, createdAt: 1 })
+			...(isAdmin && { status: 1, test: 1, updatedBy: 1, createdBy: 1, updatedAt: 1, createdAt: 1 })
 		};
 
-		let query = Post.find().select(selectionObject)
+		let query = Post.find(isAdmin ? {} : { status: { $ne: 'hidden' } })
+			.select(selectionObject)
+
 		if(isAdmin) query = query
 			.populate("updatedBy", "name")
 			.populate("createdBy", "name")
 
-		const posts = await query.lean()
+		const posts = await query.lean();
 
 		// Поднимаем title и desc на корневой уровень
 		const transformedPosts = posts.map(post => {
@@ -120,7 +122,7 @@ const getPosts = async (req, res, next) => {
 				desc: langData.desc,
 				...(isAdmin && {
 					status: post.status,
-					hasTest: post.hasTest,
+					hasTest: !!post.test,
 					updatedBy: post.updatedBy,
 					createdBy: post.createdBy,
 					updatedAt: post.updatedAt,
@@ -142,18 +144,56 @@ const getPosts = async (req, res, next) => {
 // ✅ Get single post by ID
 const getPost = async (req, res, next) => {
 	try {
-		const { id, lang = "en" } = req.params;
+		const { id } = req.params;
+		const { lang = "en", details = false } = req.query;
+		const userRole = res.locals.user?.role;
+		
+		const isAdmin = details && userRole && userRole < 3;
+		// let fields = ['previewImage'];
+		// if (isAdmin) {
+		// 	fields.push(
+		// 		'status',
+		// 		'hasTest',
+		// 		'createdBy',
+		// 		'updatedBy',
+		// 		'createdAt',
+		// 		'updatedAt',
+		// 	);
+		// } else {
+		// 	fields.push(lang);
+		// }
 
-		const post = await Post.findById(id)
-			.select(`${lang} previewImage updatedBy createdAt`) 
-			.populate("updatedBy", "name email")
-			.lean();
+		// const post = await Post.findById(id)
+		// 	.select(fields.join(' '))
+		// 	.populate(
+		// 		isAdmin ? "updatedBy createdBy" : "", 
+		// 		isAdmin ? "name email" : ""
+		// 	)
+		// 	.lean();
+
+		let query = Post.findById(id); 
+
+		if (!isAdmin) {
+				query = query.select(`previewImage ${lang} hasTest`);
+		} else {
+				query = query.select('previewImage status hasTest createdBy updatedBy createdAt updatedAt');
+				query = query.populate("updatedBy createdBy", "name email");
+		}
+
+		const post = await query.lean();
 
 		if (!post) {
 			return res.status(404).json({
 				status: false,
 				message: "Post not found",
 			});
+		}
+
+		// Поднимаем нужный язык на корневой уровень
+		if(!isAdmin) {
+			const langData = post[lang] || {};
+			delete post[lang];
+			Object.assign(post, langData);
 		}
 
 		res.status(200).json({

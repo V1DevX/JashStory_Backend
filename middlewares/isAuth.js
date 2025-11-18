@@ -13,16 +13,16 @@ const isAuth = (allowed=null) => (req, res, next) => {
 		if (!payload) { res.locals.error = "Invalid token"; return next()}
 		
 		// Check role if allowed is specified
-		if(allowed && allowed < payload.role) {
-			// For admins
-			if(allowed !== 3) return res.status(403).json({ status: false, message: 'Forbidden' })
-			// For user accounts
-			return res.status(403).json({ status: false, message: 'Unauthorized' })
+		if(allowed) {
+			// For admins (1,2)
+			if(allowed < payload.role) return res.status(403).json({ status: false, message: 'Forbidden' })
+			// For user accounts (3)
+			if(!payload.role) return res.status(403).json({ status: false, message: 'Unauthorized' })
 		}
 
 		// Attach user info to res.locals
 		res.locals.user = {_id: payload.sub, role: payload.role}
-		return next()
+		next()
 	} catch (e) {
 		return res.status(401).json({status:false, message: 'Expired token'})
 	}

@@ -1,38 +1,35 @@
 const mongoose = require("mongoose");
 
-const optionSchema = new mongoose.Schema(
-  {
-    text: { type: String, required: true },
-    isCorrect: { type: Boolean, default: false },
-  },
-  { _id: false }
-);
-
-const questionLangSchema = new mongoose.Schema(
-  {
-    text: { type: String, required: true },
-    options: [optionSchema],
-  },
-  { _id: false }
-);
-
 const questionSchema = new mongoose.Schema(
-  {
-    en: { type: questionLangSchema, required: true },
-    ru: { type: questionLangSchema, required: true },
-    kg: { type: questionLangSchema, required: true },
-  },
-  { _id: false }
+	{
+		text: { type: String, required: true },
+		options: [{
+			text: { type: String, required: true },
+			isCorrect: { type: Boolean, default: false },
+		}],
+		desc: { type: String, required: true },
+	},
+	{ _id: false }
+);
+
+const questionsLangSchema = new mongoose.Schema(
+	{
+		en: { type: [questionSchema], required: true },
+		ru: { type: [questionSchema], required: true },
+		kg: { type: [questionSchema], required: true },
+	},
+	{ _id: false }
 );
 
 const testSchema = new mongoose.Schema(
-  {
-    _id: { type: mongoose.Schema.Types.ObjectId, ref: "post" }, // общий ID с Post
-    questions: { type: [questionSchema], required: true },
-    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "user", default: null },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
-  },
-  { timestamps: true }
+	{
+		questions: { type: questionsLangSchema, required: true },
+		post: { type: mongoose.Schema.Types.ObjectId, ref: "post", default: null },
+
+		updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "user", default: null },
+		createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
+	},
+	{ timestamps: true }
 );
 
 module.exports = mongoose.model("test", testSchema);

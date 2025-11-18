@@ -24,7 +24,12 @@ const postSchema = new mongoose.Schema(
 		},
 
 		// States
-		hasTest: { type: Boolean, default: false },
+		test: { 
+			type: mongoose.Schema.Types.ObjectId,
+			ref: "Test",
+			default: null,
+			index: true // Опционально, но рекомендуется для ссылочных полей
+		},
 		status: { type: String, enum: ["hidden", "published"], default: "hidden" },
 		updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "user", default: null },
 		createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },

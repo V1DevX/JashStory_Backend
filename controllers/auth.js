@@ -393,8 +393,6 @@ const refresh = async (req, res, next) => {
 
 		res.status(200).json({ status:true, accessToken })
 	} catch (e) {
-		console.log(e);
-
 		res.status(500).json({ status:false, message: "Failed to refresh" })
 	}
 }

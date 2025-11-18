@@ -27,7 +27,6 @@ router.delete("/:id",
 
 router.get("/:id",
   isAuth(),
-  (req, res, next)=>{console.log('2 middleware test'); next();},
   validate,
   testController.getTest);
     

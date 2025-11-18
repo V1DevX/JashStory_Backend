@@ -26,11 +26,12 @@ router.delete("/:id",
   validate, 
   postController.deletePost);
 
-router.get("/:lang", 
+router.get("/list/", 
   isAuth(),
   postController.getPosts);
 
-router.get("/:id/:lang", 
+router.get("/:id", 
+  isAuth(),
   idValidator, 
   validate, 
   postController.getPost);
