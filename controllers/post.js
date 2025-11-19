@@ -171,14 +171,28 @@ const getPost = async (req, res, next) => {
 		// 	)
 		// 	.lean();
 
-		let query = Post.findById(id); 
+		let selectionObject = {
+			'_id': 1,
+			'previewImage': 1,
+			[`${lang}`]: 1,
+			'test': 1,
+			...(isAdmin && { 
+				status: 1, 
+				updatedBy: 1, 
+				createdBy: 1, 
+				updatedAt: 1, 
+				createdAt: 1 
+			})
+		};
 
-		if (!isAdmin) {
-				query = query.select(`previewImage ${lang} hasTest`);
-		} else {
-				query = query.select('previewImage status hasTest createdBy updatedBy createdAt updatedAt');
-				query = query.populate("updatedBy createdBy", "name email");
-		}
+		let query = Post.findById(id).select(selectionObject)
+
+		const testPopulateFields = isAdmin ? 'questions createdBy updatedBy' : `questions.${lang}`;
+		query = query.populate('test', testPopulateFields);
+		
+		if(isAdmin) query = query
+			.populate("updatedBy", "name")
+			.populate("createdBy", "name")
 
 		const post = await query.lean();
 
@@ -190,11 +204,15 @@ const getPost = async (req, res, next) => {
 		}
 
 		// Поднимаем нужный язык на корневой уровень
-		if(!isAdmin) {
-			const langData = post[lang] || {};
-			delete post[lang];
-			Object.assign(post, langData);
-		}
+		// if(!isAdmin) {
+		// 	const langData = post[lang] || {};
+		// 	delete post[lang];
+		// 	Object.assign(post, langData);
+
+		// 	const langTestQuestions = post.test.questions[lang] || {};
+		// 	delete post.test.questions[lang];
+		// 	Object.assign(post.test.questions, langTestQuestions);
+		// }
 
 		res.status(200).json({
 			status: true,
