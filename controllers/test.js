@@ -14,8 +14,8 @@ const createTest = async (req, res, next) => {
 			.json({ status: false, message: "Post already has a test" });
 		
 		if (
-			questions['en'].length === 0 && 
-			questions['ru'].length === 0 && 
+			questions['en'].length === 0 || 
+			questions['ru'].length === 0 || 
 			questions['kg'].length === 0
 		) {
 			return res.status(400)
@@ -126,6 +126,7 @@ const getTest = async (req, res, next) => {
 };
 
 const getResults = async (req, res, next) => {
+	// TODO
 	try {
 		const { id } = req.params;
 		const { answers } = req.body; // answers should be an array of selected option indices
@@ -156,6 +157,7 @@ const getResults = async (req, res, next) => {
 };
 
 const updateTest = async (req, res, next) => {
+	// TODO
 	try {
 		const { id } = req.params;
 		const { questions } = req.body;
@@ -181,8 +183,18 @@ const updateTest = async (req, res, next) => {
 const deleteTest = async (req, res, next) => {
 	try {
 		const { id } = req.params;
-		const deleted = await Test.findByIdAndDelete(id);
-		if (!deleted) return res.status(404).json({ status: false, message: "Test not found" });
+		const test = await Test.findById(id);
+		if (!test) return res.status(404).json({ status: false, message: "Test not found" });
+
+		if(test.post) {
+			const post = await Post.findById(test.post);
+			if (post) {
+				post.test = null;
+				await post.save();
+			}
+		}
+
+		await test.deleteOne()
 
 		res.status(200).json({
 			status: true,
