@@ -30,11 +30,12 @@ const postSchema = new mongoose.Schema(
 			default: null,
 			index: true // Опционально, но рекомендуется для ссылочных полей
 		},
+
 		status: { type: String, enum: ["hidden", "published"], default: "hidden" },
-		updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "user", default: null },
-		createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "user", required: true },
+		updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+		createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 	},
 	{ timestamps: true }
 );
 
-module.exports = mongoose.model("post", postSchema);
+module.exports = mongoose.model("Post", postSchema);
