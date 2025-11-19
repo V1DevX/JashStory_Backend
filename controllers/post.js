@@ -149,27 +149,6 @@ const getPost = async (req, res, next) => {
 		const userRole = res.locals.user?.role;
 		
 		const isAdmin = details && userRole && userRole < 3;
-		// let fields = ['previewImage'];
-		// if (isAdmin) {
-		// 	fields.push(
-		// 		'status',
-		// 		'hasTest',
-		// 		'createdBy',
-		// 		'updatedBy',
-		// 		'createdAt',
-		// 		'updatedAt',
-		// 	);
-		// } else {
-		// 	fields.push(lang);
-		// }
-
-		// const post = await Post.findById(id)
-		// 	.select(fields.join(' '))
-		// 	.populate(
-		// 		isAdmin ? "updatedBy createdBy" : "", 
-		// 		isAdmin ? "name email" : ""
-		// 	)
-		// 	.lean();
 
 		let selectionObject = {
 			'_id': 1,
@@ -202,17 +181,6 @@ const getPost = async (req, res, next) => {
 				message: "Post not found",
 			});
 		}
-
-		// Поднимаем нужный язык на корневой уровень
-		// if(!isAdmin) {
-		// 	const langData = post[lang] || {};
-		// 	delete post[lang];
-		// 	Object.assign(post, langData);
-
-		// 	const langTestQuestions = post.test.questions[lang] || {};
-		// 	delete post.test.questions[lang];
-		// 	Object.assign(post.test.questions, langTestQuestions);
-		// }
 
 		res.status(200).json({
 			status: true,
