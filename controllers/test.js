@@ -157,6 +157,9 @@ const getResults = async (req, res, next) => {
 };
 
 const updateTest = async (req, res, next) => {
+	return res.status(500).json({ status: false, message: "Server fixing" });
+
+
 	// TODO
 	try {
 		const { id } = req.params;
