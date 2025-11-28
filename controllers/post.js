@@ -27,37 +27,31 @@ const addPost = async (req, res, next) => {
 const updatePost = async (req, res, next) => {
 	try {
 		const { id } = req.params;
-		// const { ru, en, kg, previewImage, status } = req.body;
-		const changes = req.body;
-		const userId = req.user._id
-		
-		const post = await Post.findById(id);
-		if (!post) {
-			return res.status(404).json({ status: false, message: "Post not found" });
-		}
-		
-		// User info for updatedBy
-		if(userId) {
-			post.updatedBy = userId;
-			// Обновляем только то, что пришло
-			for (const key in changes) {
-				if (post[key] !== undefined) {
-					post[key] = changes[key];
-				}
+		const updateFields = req.body;
+
+		// Validate status ['published', 'hidden']
+		if(updateFields.status) {
+			const validStatuses = ['published', 'hidden'];
+			if (!validStatuses.includes(updateFields.status)) {
+				return res.status(400).json({ 
+					message: 'Invalid status. Valid statuses: published, hidden',
+				});
 			}
-			// if (ru) post.ru = ru;
-			// if (en) post.en = en;
-			// if (kg) post.kg = kg;
-			// if (previewImage) post.previewImage = previewImage;
-			// if (status) post.status = status;
-		} 
-		else res.status(401).json({ status: false, message: "Unknown user" });
+		}
 
-		await post.save();
+		// Update test
+		const test = await Post.findByIdAndUpdate(
+			id,
+			{ $set: updateFields },
+			{ new: true, runValidators: true }
+		);
 
-		return res.status(200).json({
+		if (!test) return res.status(404).json({ status: false, message: "Test not found" });
+
+		res.status(200).json({
 			status: true,
-			message: "Post updated successfully",
+			message: "Test updated successfully",
+			data: test
 		});
 	} catch (error) {
 		next(error);
