@@ -12,7 +12,7 @@ function generateAccessToken(user) {
 	return jwt.sign(
 		{ sub: user._id, role: user.role },
 		jwtAccessSecret,
-		{ expiresIn: "1h" } // lives 1 hour
+		{ expiresIn: "24h" } // lives 24 hour
 	);
 }
 
