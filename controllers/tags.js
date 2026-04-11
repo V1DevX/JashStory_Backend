@@ -140,7 +140,7 @@ const getTags = async (req, res, next) => {
     const pages = Math.ceil(total / sizeNumber);
 
     const tags = await Tag.find(filter)
-      .select(`type name.${lang} slug stats.postsCount`)
+      .select(`type name slug stats.postsCount`)
       .skip((pageNumber - 1) * sizeNumber)
       .limit(sizeNumber)
       .sort({ "stats.postsCount": -1, _id: -1 })
