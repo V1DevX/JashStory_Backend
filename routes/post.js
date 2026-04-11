@@ -14,7 +14,7 @@ router.post("/",
   validate,
   postController.addPost);
 
-router.patch( "/:id",
+router.put("/:id",
   isAuth(2),
   // updatePostValidator,
   validate,

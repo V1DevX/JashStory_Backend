@@ -2,7 +2,9 @@ const { check, param } = require("express-validator");
 const mongoose = require("mongoose");
 
 const addCategoryValidator = [
-  check("title").notEmpty().withMessage("Title is required"),
+  check("title.en").notEmpty().withMessage("title.en is required"),
+  check("title.ru").notEmpty().withMessage("title.ru is required"),
+  check("title.kg").notEmpty().withMessage("title.kg is required"),
 ];
 
 const idValidator = [

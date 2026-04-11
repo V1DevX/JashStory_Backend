@@ -1,29 +1,28 @@
-const { Category, User } = require("../models");
+const { Category } = require("../models");
 
 const addCategory = async (req, res, next) => {
   try {
     const { title, desc } = req.body;
-    const { _id } = req.user;
+    const { _id: userId } = res.locals.user;
 
-    const isCategoryExist = await Category.findOne({ title });
-    if (isCategoryExist) {
-      res.code = 400;
-      throw new Error("Category already exist");
+    const isExist = await Category.findOne({
+      $or: [
+        { "title.en": title.en },
+        { "title.ru": title.ru },
+        { "title.kg": title.kg },
+      ],
+    });
+    if (isExist) {
+      return res.status(400).json({ status: false, message: "Category already exists" });
     }
 
-    const user = await User.findById(_id);
-    if (!user) {
-      res.code = 404;
-      throw new Error("User not found");
-    }
+    const category = new Category({ title, desc, createdBy: userId, updatedBy: userId });
+    await category.save();
 
-    const newCategory = new Category({ title, desc, updatedBy: _id });
-    await newCategory.save();
-
-    res.status(201).json({
-      code: 201,
-      status: true,
+    return res.status(201).json({
+      status:  true,
       message: "Category added successfully",
+      data:    category,
     });
   } catch (error) {
     next(error);
@@ -32,36 +31,41 @@ const addCategory = async (req, res, next) => {
 
 const updateCategory = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const { _id } = req.user;
+    const { id }          = req.params;
+    const { _id: userId } = res.locals.user;
     const { title, desc } = req.body;
 
     const category = await Category.findById(id);
     if (!category) {
-      res.code = 404;
-      throw new Error("Category not found");
+      return res.status(404).json({ status: false, message: "Category not found" });
     }
 
-    const isCategoryExist = await Category.findOne({ title });
-    if (
-      isCategoryExist &&
-      isCategoryExist.title === title &&
-      String(isCategoryExist._id) !== String(category._id)
-    ) {
-      res.code = 400;
-      throw new Error("Title alraedy exist");
+    if (title) {
+      // Check uniqueness only for fields that actually changed
+      const orConditions = [];
+      if (title.en && title.en !== category.title.en) orConditions.push({ "title.en": title.en });
+      if (title.ru && title.ru !== category.title.ru) orConditions.push({ "title.ru": title.ru });
+      if (title.kg && title.kg !== category.title.kg) orConditions.push({ "title.kg": title.kg });
+
+      if (orConditions.length) {
+        const conflict = await Category.findOne({ $or: orConditions, _id: { $ne: id } });
+        if (conflict) {
+          return res.status(400).json({ status: false, message: "Title already exists" });
+        }
+      }
+
+      category.title = { ...category.title.toObject(), ...title };
     }
 
-    category.title = title ? title : category.title;
-    category.desc = desc;
-    category.updatedBy = _id;
+    if (desc !== undefined) category.desc = desc;
+    category.updatedBy = userId;
+
     await category.save();
 
-    res.status(200).json({
-      code: 200,
-      status: true,
+    return res.status(200).json({
+      status:  true,
       message: "Category updated successfully",
-      data: { category },
+      data:    category,
     });
   } catch (error) {
     next(error);
@@ -72,17 +76,13 @@ const deleteCategory = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const category = await Category.findById(id);
+    const category = await Category.findByIdAndDelete(id);
     if (!category) {
-      res.code = 404;
-      throw new Error("Category not found");
+      return res.status(404).json({ status: false, message: "Category not found" });
     }
 
-    await Category.findByIdAndDelete(id);
-
-    res.status(200).json({
-      code: 200,
-      staus: true,
+    return res.status(200).json({
+      status:  true,
       message: "Category deleted successfully",
     });
   } catch (error) {
@@ -92,31 +92,37 @@ const deleteCategory = async (req, res, next) => {
 
 const getCategories = async (req, res, next) => {
   try {
-    const { q, size, page } = req.query;
-    let query = {};
+    const { q, lang = "en", size, page } = req.query;
 
     const sizeNumber = parseInt(size) || 10;
     const pageNumber = parseInt(page) || 1;
 
+    let filter = {};
     if (q) {
-      const search = RegExp(q, "i");
-
-      query = { $or: [{ title: search }, { desc: search }] };
+      const rx = new RegExp(q, "i");
+      filter = {
+        $or: [
+          { "title.en": rx },
+          { "title.ru": rx },
+          { "title.kg": rx },
+        ],
+      };
     }
 
-    const total = await Category.countDocuments(query);
+    const total = await Category.countDocuments(filter);
     const pages = Math.ceil(total / sizeNumber);
 
-    const categories = await Category.find(query)
+    const categories = await Category.find(filter)
+      .select(`title desc`)
       .skip((pageNumber - 1) * sizeNumber)
       .limit(sizeNumber)
-      .sort({ _id: -1 });
+      .sort({ _id: -1 })
+      .lean();
 
-    res.status(200).json({
-      code: 200,
-      status: true,
-      message: "Get category list successfully",
-      data: { categories, total, pages },
+    return res.status(200).json({
+      status:  true,
+      message: "Categories fetched successfully",
+      data:    { categories, total, pages },
     });
   } catch (error) {
     next(error);
@@ -125,29 +131,27 @@ const getCategories = async (req, res, next) => {
 
 const getCategory = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const { id }      = req.params;
+    const { lang = "en" } = req.query;
 
-    const category = await Category.findById(id);
+    const category = await Category.findById(id)
+      .select(`title.${lang} desc createdBy updatedBy createdAt updatedAt`)
+      .populate("createdBy", "name")
+      .populate("updatedBy", "name")
+      .lean();
+
     if (!category) {
-      res.code = 404;
-      throw new Error("Category not found");
+      return res.status(404).json({ status: false, message: "Category not found" });
     }
 
-    res.status(200).json({
-      code: 200,
-      status: true,
-      message: "Get category successfully",
-      data: { category },
+    return res.status(200).json({
+      status:  true,
+      message: "Category fetched successfully",
+      data:    category,
     });
   } catch (error) {
     next(error);
   }
 };
 
-module.exports = {
-  addCategory,
-  updateCategory,
-  deleteCategory,
-  getCategories,
-  getCategory,
-};
+module.exports = { addCategory, updateCategory, deleteCategory, getCategories, getCategory };

@@ -112,44 +112,74 @@ async function adjustPostsCount(ids, delta) {
 
 // 1. New post saved with tags → increment
 postSchema.pre("save", async function (next) {
-  if (this.isNew && this.tags?.length) {
-    await adjustPostsCount(this.tags.map(String), 1);
+  try {
+    if (this.isNew && Array.isArray(this.tags) && this.tags.length) {
+      await adjustPostsCount(this.tags.map(String), 1);
+    }
+  } catch (err) {
+    console.error("[Post hook] pre-save error:", err.message);
   }
   next();
 });
 
 // 2. Tags updated via findByIdAndUpdate → diff old vs new
+//    Non-critical: wrapped in try/catch so any failure never blocks the update.
 postSchema.pre("findOneAndUpdate", async function (next) {
-  const update  = this.getUpdate();
-  const newTags = update.$set?.tags ?? update.tags;
-  if (!newTags) return next();
+  try {
+    const update  = this.getUpdate();
+    const newTags = update?.$set?.tags ?? update?.tags;
 
-  const doc = await this.model.findOne(this.getQuery()).select("tags").lean();
-  if (!doc) return next();
+    // Only run when tags array is explicitly being updated
+    if (!Array.isArray(newTags)) return next();
 
-  this._tagDiff = {
-    added:   newTags.map(String).filter((id) => !doc.tags.map(String).includes(id)),
-    removed: doc.tags.map(String).filter((id) => !newTags.map(String).includes(id)),
-  };
+    const doc = await this.model.findOne(this.getQuery()).select("tags").lean();
+    if (!doc) return next();
+
+    const oldTagStrs = Array.isArray(doc.tags) ? doc.tags.map(String) : [];
+    const newTagStrs = newTags.map(String);
+
+    this._tagDiff = {
+      added:   newTagStrs.filter((id) => !oldTagStrs.includes(id)),
+      removed: oldTagStrs.filter((id) => !newTagStrs.includes(id)),
+    };
+  } catch (err) {
+    // Tag count sync failed — log and continue; update itself must not fail
+    console.error("[Post hook] pre-findOneAndUpdate error:", err.message);
+    this._tagDiff = null;
+  }
   next();
 });
 
 postSchema.post("findOneAndUpdate", async function () {
-  if (!this._tagDiff) return;
-  await adjustPostsCount(this._tagDiff.added,   1);
-  await adjustPostsCount(this._tagDiff.removed, -1);
+  try {
+    if (!this._tagDiff) return;
+    await adjustPostsCount(this._tagDiff.added,   1);
+    await adjustPostsCount(this._tagDiff.removed, -1);
+  } catch (err) {
+    console.error("[Post hook] post-findOneAndUpdate error:", err.message);
+  }
 });
 
 // 3. Post deleted → decrement all its tags
 postSchema.pre("findOneAndDelete", async function (next) {
-  const doc = await this.model.findOne(this.getQuery()).select("tags").lean();
-  if (doc?.tags?.length) this._deletedTags = doc.tags.map(String);
+  try {
+    const doc = await this.model.findOne(this.getQuery()).select("tags").lean();
+    if (Array.isArray(doc?.tags) && doc.tags.length) {
+      this._deletedTags = doc.tags.map(String);
+    }
+  } catch (err) {
+    console.error("[Post hook] pre-findOneAndDelete error:", err.message);
+  }
   next();
 });
 
 postSchema.post("findOneAndDelete", async function () {
-  if (this._deletedTags?.length) {
-    await adjustPostsCount(this._deletedTags, -1);
+  try {
+    if (this._deletedTags?.length) {
+      await adjustPostsCount(this._deletedTags, -1);
+    }
+  } catch (err) {
+    console.error("[Post hook] post-findOneAndDelete error:", err.message);
   }
 });
 

@@ -170,38 +170,57 @@ const getPosts = async (req, res, next) => {
 };
 
 // ─── GET /api/posts/:id ────────────────────────────────────────────────────────
+// Query:
+//   lang=en|ru|kg   — language for content (default: en); ignored in admin mode
+//   details=true    — admin mode: returns all 3 languages + status + category
 const getPost = async (req, res, next) => {
 	try {
-		const { id }                     = req.params;
+		const { id }                           = req.params;
 		const { lang = "en", details = false } = req.query;
-		const userRole                   = res.locals.user?.role;
+		const userRole                         = res.locals.user?.role;
 
+		// Admin mode: authenticated user with role < 3 requesting details
 		const isAdmin = details && userRole && userRole < 3;
 
-		const selectionObject = {
-			_id:          1,
-			previewImage: 1,
-			tags:         1,
-			[`${lang}`]:  1,
-			test:         1,
-			...(isAdmin && {
-				status:    1,
-				category:  1,
-				updatedBy: 1,
-				createdBy: 1,
-				updatedAt: 1,
-				createdAt: 1,
-			}),
-		};
+		const selectionObject = isAdmin
+			// Admin/editor: return all languages + metadata for PostEditor
+			? {
+				_id:          1,
+				previewImage: 1,
+				tags:         1,
+				test:         1,
+				en:           1,
+				ru:           1,
+				kg:           1,
+				status:       1,
+				category:     1,
+				updatedBy:    1,
+				createdBy:    1,
+				updatedAt:    1,
+				createdAt:    1,
+			}
+			// Public: return only the requested language
+			: {
+				_id:           1,
+				previewImage:  1,
+				tags:          1,
+				test:          1,
+				[`${lang}`]:   1,
+			};
 
 		const testPopulateFields = isAdmin
 			? "questions createdBy updatedBy"
 			: `questions.${lang}`;
 
+		// Admin: populate tag names in all languages for the editor UI
+		const tagPopulateFields = isAdmin
+			? "name slug type"
+			: `name.${lang} slug type period location`;
+
 		let query = Post.findById(id)
 			.select(selectionObject)
 			.populate("test", testPopulateFields)
-			.populate("tags", `name.${lang} slug type period location`);
+			.populate("tags", tagPopulateFields);
 
 		if (isAdmin) {
 			query = query
