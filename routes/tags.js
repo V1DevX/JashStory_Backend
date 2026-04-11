@@ -7,7 +7,7 @@ const validate = require("../validators/validate");
 const isAuth   = require("../middlewares/isAuth");
 
 // ─── Public ────────────────────────────────────────────────────────────────────
-router.get("/",            tagsController.getTags);
+router.get("/",            isAuth(), tagsController.getTags);
 router.get("/slug/:slug",  tagsController.getTagBySlug);
 router.get("/:id/posts",   idValidator, validate, tagsController.getTagPosts);
 router.get("/:id",         idValidator, validate, tagsController.getTag);

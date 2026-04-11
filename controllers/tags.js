@@ -118,14 +118,16 @@ const deleteTag = async (req, res, next) => {
 
 // ─── GET /api/tags ─────────────────────────────────────────────────────────────
 // Query: ?q=text  &type=person  &lang=ru  &page=1  &size=20
+// Todo: needs optimization (perf)
 const getTags = async (req, res, next) => {
   try {
     const { q, type, lang = "en", page, size } = req.query;
+    const isAdmin =  res.locals.user?.role < 3;
 
-    const sizeNumber = parseInt(size) || 20;
-    const pageNumber = parseInt(page) || 1;
+    // const sizeNumber = parseInt(size) || 20;
+    // const pageNumber = parseInt(page) || 1;
 
-    const filter = { status: "active" };
+    const filter = isAdmin ? {} : { status: "active" };
     if (type) filter.type = type;
     if (q) {
       const rx = new RegExp(q, "i");
@@ -137,19 +139,21 @@ const getTags = async (req, res, next) => {
     }
 
     const total = await Tag.countDocuments(filter);
-    const pages = Math.ceil(total / sizeNumber);
+    // const pages = Math.ceil(total / sizeNumber);
 
     const tags = await Tag.find(filter)
-      .select(`type name slug stats.postsCount`)
-      .skip((pageNumber - 1) * sizeNumber)
-      .limit(sizeNumber)
+      .select(`type name slug stats.postsCount ${isAdmin && "status"}`)
+      // .skip((pageNumber - 1) * sizeNumber)
+      // .limit(sizeNumber)
       .sort({ "stats.postsCount": -1, _id: -1 })
       .lean();
 
+    const data = { tags, total }
+    
     return res.status(200).json({
       status:  true,
       message: "Tags fetched successfully",
-      data:    { tags, total, pages },
+      data,
     });
   } catch (error) {
     next(error);
