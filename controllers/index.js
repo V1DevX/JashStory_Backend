@@ -3,6 +3,7 @@ const categoryController = require("./category");
 const fileController = require("./file");
 const postController = require("./post");
 const testController = require("./test");
+const tagsController = require("./tags");
 
 module.exports = {
   authController,
@@ -10,4 +11,5 @@ module.exports = {
   fileController,
   postController,
   testController,
+  tagsController,
 };

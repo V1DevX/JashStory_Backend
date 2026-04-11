@@ -1,44 +1,50 @@
 const { check, param } = require("express-validator");
 const mongoose = require("mongoose");
 
+const isValidObjectId = (value) => {
+  if (value && !mongoose.Types.ObjectId.isValid(value)) {
+    throw new Error("Invalid ObjectId");
+  }
+  return true;
+};
+
 const addPostValidator = [
-  // check("title").notEmpty().withMessage("Title is required"),
+  check("en.title").notEmpty().withMessage("en.title is required"),
 
-  // check("file").custom(async (file) => {
-  //   if (file && !mongoose.Types.ObjectId.isValid(file)) {
-  //     throw "Invalid file id";
-  //   }
-  // }),
+  check("previewImage.public_id").notEmpty().withMessage("previewImage.public_id is required"),
+  check("previewImage.url").notEmpty().withMessage("previewImage.url is required"),
 
-  // check("category")
-  //   .notEmpty()
-  //   .withMessage("Category is required")
-  //   .custom(async (category) => {
-  //     if (category && !mongoose.Types.ObjectId.isValid(category)) {
-  //       throw "Invalid category id";
-  //     }
-  //   }),
+  check("category").optional().custom(isValidObjectId).withMessage("Invalid category id"),
+
+  check("tags")
+    .optional()
+    .isArray().withMessage("tags must be an array")
+    .custom((arr) => {
+      arr.forEach((id) => {
+        if (!mongoose.Types.ObjectId.isValid(id)) throw new Error(`Invalid tag id: ${id}`);
+      });
+      return true;
+    }),
 ];
 
 const updatePostValidator = [
-  check("file").custom(async (file) => {
-    if (file && !mongoose.Types.ObjectId.isValid(file)) {
-      throw "Invalid file id";
-    }
-  }),
+  check("category").optional().custom(isValidObjectId).withMessage("Invalid category id"),
 
-  check("category").custom(async (category) => {
-    if (category && !mongoose.Types.ObjectId.isValid(category)) {
-      throw "Invalid category id";
-    }
-  }),
+  check("tags")
+    .optional()
+    .isArray().withMessage("tags must be an array")
+    .custom((arr) => {
+      arr.forEach((id) => {
+        if (!mongoose.Types.ObjectId.isValid(id)) throw new Error(`Invalid tag id: ${id}`);
+      });
+      return true;
+    }),
 ];
 
 const idValidator = [
-  param("id").custom(async (id) => {
-    if (id && !mongoose.Types.ObjectId.isValid(id)) {
-      throw "Invalid post id";
-    }
+  param("id").custom((id) => {
+    if (!mongoose.Types.ObjectId.isValid(id)) throw new Error("Invalid post id");
+    return true;
   }),
 ];
 

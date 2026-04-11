@@ -7,7 +7,7 @@ const cors = require("cors");
 dotenv.config();
 const connectMongodb = require("./config/mongodb")
 // const { authRoute, categoryRoute, fileRoute, postRoute } = require("./routes");
-const { authRoute, categoryRoute, postRoute, fileRoute, testRoute } = require("./routes");
+const { authRoute, categoryRoute, postRoute, fileRoute, testRoute, tagsRoute } = require("./routes");
 const { errorHandler } = require("./middlewares");
 const notfound = require("./controllers/notfound");
 const { isProd } = require("./config/kyes");
@@ -39,6 +39,7 @@ app.use("/api/category", categoryRoute);
 app.use("/api/posts", postRoute);
 app.use("/api/tests", testRoute);
 
+app.use("/api/tags",  tagsRoute);
 app.use("/api/media", fileRoute);
 
 app.get("/", (req, res) => {
